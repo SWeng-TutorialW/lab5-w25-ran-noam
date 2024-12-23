@@ -1,29 +1,195 @@
+// Updated PrimaryController.java
 package il.cshaifasweng.OCSFMediatorExample.client;
+
+import il.cshaifasweng.OCSFMediatorExample.client.ocsf.AbstractClient;
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 import java.io.IOException;
 
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-
 public class PrimaryController {
 
-    @FXML
-    void sendWarning(ActionEvent event) {
-    	try {
-			SimpleClient.getClient().sendToServer("#warning");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    }
+	@FXML
+	private Button button00;
+	@FXML
+	private Button button01;
+	@FXML
+	private Button button02;
+	@FXML
+	private Button button10;
+	@FXML
+	private Button button11;
+	@FXML
+	private Button button12;
+	@FXML
+	private Button button20;
+	@FXML
+	private Button button21;
+	@FXML
+	private Button button22;
+	@FXML
+	private Label statusLabel;
+
+	private Button[][] buttons;
+	private char playerSymbol;
+	private boolean myTurn;
+
+
+	private TicTacToeNetworkClient networkClient;
 
 	@FXML
-	void initialize(){
+	public void initialize() {
+		buttons = new Button[][] {
+				{button00, button01, button02},
+				{button10, button11, button12},
+				{button20, button21, button22}
+		};
+
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				buttons[i][j].setText("");  // Ensure buttons start empty
+				final int row = i;
+				final int col = j;
+				buttons[i][j].setOnAction(e -> {
+                    try {
+                        handleMove(row, col);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+			}
+		}
+
+		connectToServer();
+	}
+
+
+	private void connectToServer() {
 		try {
-			SimpleClient.getClient().sendToServer("add client");
+			networkClient = new TicTacToeNetworkClient("127.0.0.1", 3000);
+			networkClient.openConnection();
+			networkClient.sendToServer("CONNECT");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+	}
+
+	private void handleMove(int row, int col) throws IOException {
+		if (myTurn && buttons[row][col].getText().equals(""))
+		{
+			buttons[row][col].setText(String.valueOf(playerSymbol));
+			myTurn = false;
+			if (checkForWin())
+			{
+				statusLabel.setText("You win!");
+				disableButtons();
+				networkClient.sendToServer("WIN " + playerSymbol);
+			}
+			else
+			{
+
+				statusLabel.setText("Waiting for opponent...");
+				try {
+					networkClient.sendToServer("MOVE " + row + " " + col);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.out.println("Error sending move to server: " + e.getMessage());
+				}
+			}
+		} else {
+			if (!buttons[row][col].getText().equals("")) {
+				System.out.println("Attempted to move but button at " + row + ", " + col + " is already filled.");
+			} else {
+				System.out.println("Attempted to move but it's not your turn.");
+			}
+		}
+	}
+
+	private boolean checkForWin() {
+		// פסאודו קוד לבדיקת תנאי נצחון לוח 3x3
+		for (int i = 0; i < 3; i++) {
+			if (!buttons[i][0].getText().equals("") &&
+					buttons[i][0].getText().equals(buttons[i][1].getText()) &&
+					buttons[i][1].getText().equals(buttons[i][2].getText())) {
+				return true;
+			}
+			if (!buttons[0][i].getText().equals("") &&
+					buttons[0][i].getText().equals(buttons[1][i].getText()) &&
+					buttons[1][i].getText().equals(buttons[2][i].getText())) {
+				return true;
+			}
+		}
+		if (!buttons[0][0].getText().equals("") &&
+				buttons[0][0].getText().equals(buttons[1][1].getText()) &&
+				buttons[1][1].getText().equals(buttons[2][2].getText())) {
+			return true;
+		}
+		if (!buttons[0][2].getText().equals("") &&
+				buttons[0][2].getText().equals(buttons[1][1].getText()) &&
+				buttons[1][1].getText().equals(buttons[2][0].getText())) {
+			return true;
+		}
+		return false;
+	}
+
+	private void disableButtons() {
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				buttons[i][j].setDisable(true);
+			}
+		}
+	}
+
+
+
+
+	public void handleServerMessage(String message) {
+		Platform.runLater(() ->
+		{
+			if (message.startsWith("MOVE"))
+			{
+				String[] parts = message.split(" ");
+				int row = Integer.parseInt(parts[1]);
+				int col = Integer.parseInt(parts[2]);
+				char symbol = parts[3].charAt(0);
+				buttons[row][col].setText(String.valueOf(symbol));
+				myTurn = (symbol != playerSymbol); // Toggle turn
+				statusLabel.setText(myTurn ? "Your turn" : "Waiting for opponent...");
+				System.out.println("Updated move from other player at " + row + ", " + col);
+			}
+			else if (message.startsWith("WIN"))
+			{
+				statusLabel.setText("You win!");
+				disableButtons();
+			}
+			else if (message.startsWith("LOSE"))
+			{
+				statusLabel.setText("You lose!");
+				disableButtons();
+			}
+			else if (message.startsWith("START"))
+			{
+				playerSymbol = message.charAt(6);
+				myTurn = playerSymbol == 'X';
+				statusLabel.setText(myTurn ? "Your turn" : "Waiting for opponent...");
+				System.out.println("Game started. You are " + playerSymbol);
+			}
+		});
+	}
+
+
+	private class TicTacToeNetworkClient extends AbstractClient {
+		public TicTacToeNetworkClient(String host, int port) {
+			super(host, port);
+		}
+
+		@Override
+		protected void handleMessageFromServer(Object msg) {
+			if (msg instanceof String) {
+				handleServerMessage((String) msg);
+			}
 		}
 	}
 }

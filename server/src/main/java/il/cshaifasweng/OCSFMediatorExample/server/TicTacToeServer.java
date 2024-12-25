@@ -48,32 +48,33 @@ public class TicTacToeServer extends AbstractServer {
                     player.sendToClient(fullMessage);
                 }
 
-
             }
             else if (message.startsWith("WIN") || message.startsWith("LOSE") || message.startsWith("DRAW"))
             {
                 if (message.startsWith("DRAW"))
                 {
-                    for (ConnectionToClient player : players) {
+                    for (ConnectionToClient player : players)
+                    {
                         player.sendToClient("DRAW");
                     }
                 }
                 else
                 {
-                    for (ConnectionToClient player : players) {
+                    for (ConnectionToClient player : players)
+                    {
                         if (player == client) {
                             player.sendToClient("WIN");
                         } else {
                             player.sendToClient("LOSE");
                         }
                     }
-
                     gameStarted = false;
                     resetBoard();
                 }
             }
 
-            else if (!gameStarted && message.startsWith("CONNECT")) {
+            else if (!gameStarted && message.startsWith("CONNECT"))
+            {
                 client.setInfo("symbol", (players.size() == 0 ? "X" : "O"));
                 if (!players.contains(client)) {
                     players.add(client);
@@ -88,13 +89,15 @@ public class TicTacToeServer extends AbstractServer {
             }
 
         }
-        catch (IOException e) {
+        catch (IOException e)
+        {
             System.err.println("Error handling message from client: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private boolean isBoardFull() {
+    private boolean isBoardFull()
+    {
         // Check if the board is full
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -106,7 +109,8 @@ public class TicTacToeServer extends AbstractServer {
         return true;
     }
 
-    private void resetBoard() {
+    private void resetBoard()
+    {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 board[i][j] = 0; // Clear the board
@@ -115,7 +119,8 @@ public class TicTacToeServer extends AbstractServer {
     }
 
     @Override
-    protected void clientDisconnected(ConnectionToClient client) {
+    protected void clientDisconnected(ConnectionToClient client)
+    {
         players.remove(client);
         gameStarted = false;
         resetBoard();

@@ -1,4 +1,3 @@
-
 // Updated TicTacToeServer.java
 package il.cshaifasweng.OCSFMediatorExample.server;
 
@@ -11,9 +10,11 @@ import java.util.ArrayList;
 public class TicTacToeServer extends AbstractServer {
     private final ArrayList<ConnectionToClient> players = new ArrayList<>();
     private boolean gameStarted = false;
+    private int[][] board = new int[3][3];
 
     public TicTacToeServer(int port) {
         super(port);
+        resetBoard();
     }
 
     @Override
@@ -25,25 +26,36 @@ public class TicTacToeServer extends AbstractServer {
             System.out.println("Handling message from client: " + message);
 
             if (message.startsWith("MOVE")) {
-                String symbol = client.getInfo("symbol").toString(); // Retrieve the player's symbol
-                String fullMessage = message + " " + symbol; // Append the symbol to the original message
+                if (isBoardFull()) {
+                    for (ConnectionToClient player : players) {
+                        player.sendToClient("DRAW");
+                    }
+                }
+                String symbol = client.getInfo("symbol").toString();
+                String fullMessage = message + " " + symbol;
 
                 System.out.println("Received move message: " + fullMessage);
+
+                // Update the board state
+                String[] parts = message.split(" ");
+                int row = Integer.parseInt(parts[1]);
+                int col = Integer.parseInt(parts[2]);
+                board[row][col] = symbol.equals("X") ? 1 : 2;
 
                 // Forward the move message to all other clients
                 for (ConnectionToClient player : players)
                 {
                     player.sendToClient(fullMessage);
                 }
+
+
             }
             else if (message.startsWith("WIN") || message.startsWith("LOSE") || message.startsWith("DRAW"))
             {
                 if (message.startsWith("DRAW"))
                 {
                     for (ConnectionToClient player : players) {
-                        if (player == client) {
-                            player.sendToClient("DRAW");
-                        }
+                        player.sendToClient("DRAW");
                     }
                 }
                 else
@@ -56,23 +68,24 @@ public class TicTacToeServer extends AbstractServer {
                         }
                     }
 
-                    gameStarted = false; // End the game once it's over
+                    gameStarted = false;
+                    resetBoard();
                 }
             }
 
-                         else if (!gameStarted && message.startsWith("CONNECT")) {
-                            client.setInfo("symbol", (players.size() == 0 ? "X" : "O")); // Assign X to the first player and O to the second
-                            if (!players.contains(client)) {
-                                players.add(client);
-                                System.out.println("Added new player, total: " + players.size());
-                                if (players.size() == 2) {
-                                    gameStarted = true;
-                                    players.get(0).sendToClient("START X");
-                                    players.get(1).sendToClient("START O");
-                                    System.out.println("Game started with players X and O.");
-                                }
-                            }
-                        }
+            else if (!gameStarted && message.startsWith("CONNECT")) {
+                client.setInfo("symbol", (players.size() == 0 ? "X" : "O"));
+                if (!players.contains(client)) {
+                    players.add(client);
+                    System.out.println("Added new player, total: " + players.size());
+                    if (players.size() == 2) {
+                        gameStarted = true;
+                        players.get(0).sendToClient("START X");
+                        players.get(1).sendToClient("START O");
+                        System.out.println("Game started with players X and O.");
+                    }
+                }
+            }
 
         }
         catch (IOException e) {
@@ -81,11 +94,30 @@ public class TicTacToeServer extends AbstractServer {
         }
     }
 
+    private boolean isBoardFull() {
+        // Check if the board is full
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (board[i][j] == 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
+    private void resetBoard() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                board[i][j] = 0; // Clear the board
+            }
+        }
+    }
 
     @Override
     protected void clientDisconnected(ConnectionToClient client) {
         players.remove(client);
-        gameStarted = false; // Reset the game state
+        gameStarted = false;
+        resetBoard();
     }
 }

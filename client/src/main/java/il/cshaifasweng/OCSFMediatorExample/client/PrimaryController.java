@@ -65,7 +65,6 @@ public class PrimaryController {
 		connectToServer();
 	}
 
-
 	private void connectToServer() {
 		try {
 			networkClient = new TicTacToeNetworkClient("127.0.0.1", 3000);
@@ -81,6 +80,18 @@ public class PrimaryController {
 		{
 			buttons[row][col].setText(String.valueOf(playerSymbol));
 			myTurn = false;
+			try {
+				if (checkForDraw()) {
+					statusLabel.setText("It's a draw!");
+					disableButtons();
+					networkClient.sendToServer("DRAW");
+
+				}
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+				System.out.println("Error sending move to server: " + e.getMessage());
+			}
 			if (checkForWin())
 			{
 				statusLabel.setText("You win!");
@@ -99,6 +110,7 @@ public class PrimaryController {
 				}
 			}
 		} else {
+
 			if (!buttons[row][col].getText().equals("")) {
 				System.out.println("Attempted to move but button at " + row + ", " + col + " is already filled.");
 			} else {
@@ -108,7 +120,6 @@ public class PrimaryController {
 	}
 
 	private boolean checkForWin() {
-		// פסאודו קוד לבדיקת תנאי נצחון לוח 3x3
 		for (int i = 0; i < 3; i++) {
 			if (!buttons[i][0].getText().equals("") &&
 					buttons[i][0].getText().equals(buttons[i][1].getText()) &&
@@ -141,23 +152,32 @@ public class PrimaryController {
 			}
 		}
 	}
-
-
-
-
 	public void handleServerMessage(String message) {
 		Platform.runLater(() ->
 		{
 			if (message.startsWith("MOVE"))
 			{
+
 				String[] parts = message.split(" ");
 				int row = Integer.parseInt(parts[1]);
 				int col = Integer.parseInt(parts[2]);
 				char symbol = parts[3].charAt(0);
 				buttons[row][col].setText(String.valueOf(symbol));
-				myTurn = (symbol != playerSymbol); // Toggle turn
-				statusLabel.setText(myTurn ? "Your turn" : "Waiting for opponent...");
-				System.out.println("Updated move from other player at " + row + ", " + col);
+				if (checkForDraw()) {
+					try {
+						statusLabel.setText("It's a draw!");
+						disableButtons();
+						networkClient.sendToServer("DRAW");
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.out.println("Error sending move to server: " + e.getMessage());
+					}
+				}
+				else
+				{
+						myTurn = (symbol != playerSymbol); // Toggle turn
+						statusLabel.setText(myTurn ? "Your turn" : "Waiting for opponent...");
+				}
 			}
 			else if (message.startsWith("WIN"))
 			{
@@ -179,6 +199,26 @@ public class PrimaryController {
 		});
 	}
 
+	private boolean checkForDraw() {
+		// Check if all buttons are filled and no winner exists
+		boolean allFilled = true;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				if (buttons[i][j].getText().equals("")) {
+					allFilled = false;
+					break;
+				}
+			}
+			if (!allFilled) break;
+		}
+
+		if (allFilled && !checkForWin()) {
+			System.out.println("Draw detected");
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 	private class TicTacToeNetworkClient extends AbstractClient {
 		public TicTacToeNetworkClient(String host, int port) {

@@ -1,23 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.VBox?>
 
-<GridPane fx:controller="il.cshaifasweng.OCSFMediatorExample.client.PrimaryController"
-          xmlns:fx="http://javafx.com/fxml" alignment="CENTER" hgap="10" vgap="10">
-   <children>
-      <Button fx:id="button00" GridPane.rowIndex="0" GridPane.columnIndex="0" text=" " />
-      <Button fx:id="button01" GridPane.rowIndex="0" GridPane.columnIndex="1" text=" " />
-      <Button fx:id="button02" GridPane.rowIndex="0" GridPane.columnIndex="2" text=" " />
-
-      <Button fx:id="button10" GridPane.rowIndex="1" GridPane.columnIndex="0" text=" " />
-      <Button fx:id="button11" GridPane.rowIndex="1" GridPane.columnIndex="1" text=" " />
-      <Button fx:id="button12" GridPane.rowIndex="1" GridPane.columnIndex="2" text=" " />
-
-      <Button fx:id="button20" GridPane.rowIndex="2" GridPane.columnIndex="0" text=" " />
-      <Button fx:id="button21" GridPane.rowIndex="2" GridPane.columnIndex="1" text=" " />
-      <Button fx:id="button22" GridPane.rowIndex="2" GridPane.columnIndex="2" text=" " />
-
-      <Label fx:id="statusLabel" GridPane.rowIndex="3" GridPane.columnSpan="3" text="Waiting for opponent..." />
-   </children>
-</GridPane>
+<VBox alignment="CENTER" spacing="10" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="il.cshaifasweng.OCSFMediatorExample.client.PrimaryController">
+    <TextField fx:id="ipField" promptText="Enter Server IP" />
+    <Button fx:id="connectButton" text="Connect" />
+</VBox>

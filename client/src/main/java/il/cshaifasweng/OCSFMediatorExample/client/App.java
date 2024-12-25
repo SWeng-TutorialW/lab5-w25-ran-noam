@@ -20,16 +20,24 @@ import org.greenrobot.eventbus.Subscribe;
 public class App extends Application {
 
     private static Scene scene;
-    private SimpleClient client;
+    private static SimpleClient client; // Make client static for global access
 
     @Override
     public void start(Stage stage) throws IOException {
         EventBus.getDefault().register(this);
-        client = SimpleClient.getClient();
-        client.openConnection();
         scene = new Scene(loadFXML("primary"), 300, 300);
         stage.setScene(scene);
         stage.show();
+    }
+
+    // Static method to set the client instance
+    public static void setClient(SimpleClient newClient) {
+        client = newClient;
+    }
+
+    // Static method to get the client instance
+    public static SimpleClient getClientInstance() {
+        return client;
     }
 
     static void setRoot(String fxml) throws IOException {
@@ -41,14 +49,13 @@ public class App extends Application {
         return fxmlLoader.load();
     }
 
-
-
     @Override
     public void stop() throws Exception {
-        // TODO Auto-generated method stub
         EventBus.getDefault().unregister(this);
-        client.sendToServer("remove client");
-        client.closeConnection();
+        if (client != null) {
+            client.sendToServer("remove client");
+            client.closeConnection();
+        }
         super.stop();
     }
 
@@ -62,11 +69,9 @@ public class App extends Application {
             );
             alert.show();
         });
-
     }
 
     public static void main(String[] args) {
         launch();
     }
-
 }

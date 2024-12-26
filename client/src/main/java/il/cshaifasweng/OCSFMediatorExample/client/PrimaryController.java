@@ -12,6 +12,8 @@ public class PrimaryController {
 	@FXML
 	private TextField ipField; // Text field for IP input
 	@FXML
+	private TextField portField; // Text field for Port input
+	@FXML
 	private Button connectButton; // Button to trigger connection
 
 	@FXML
@@ -21,10 +23,17 @@ public class PrimaryController {
 
 	private void handleConnect() {
 		String ip = ipField.getText().trim(); // Get the trimmed IP input
-		if (!ip.isEmpty()) {
+		String portText = portField.getText().trim(); // Get the trimmed Port input
+
+		if (!ip.isEmpty() && !portText.isEmpty()) {
 			try {
-				// Dynamically update the client with the new IP
-				SimpleClient.setHostAndPort(ip, 3000);
+				int port = Integer.parseInt(portText); // Parse the port number
+				if (port < 1 || port > 65535) {
+					throw new NumberFormatException("Port out of range");
+				}
+
+				// Dynamically update the client with the new IP and Port
+				SimpleClient.setHostAndPort(ip, port);
 				SimpleClient client = SimpleClient.getClient(); // Get the updated client instance
 
 				// Open the connection
@@ -32,14 +41,14 @@ public class PrimaryController {
 
 				// Switch to the game screen (secondary.fxml)
 				App.setRoot("secondary");
+			} catch (NumberFormatException e) {
+				showErrorAlert("Invalid Port", "Please enter a valid port number between 1 and 65535.");
 			} catch (IOException e) {
-				// Show an error alert if connection fails
-				showErrorAlert("Connection Failed", "Unable to connect to the server at IP: " + ip);
+				showErrorAlert("Connection Failed", "Unable to connect to the server at " + ip + ":" + portText);
 				e.printStackTrace();
 			}
 		} else {
-			// Show an error alert if the IP field is empty
-			showErrorAlert("Invalid Input", "Please enter a valid IP address.");
+			showErrorAlert("Invalid Input", "Please enter both a valid IP address and port number.");
 		}
 	}
 

@@ -9,7 +9,6 @@ import java.io.IOException;
 
 public class SecondaryController {
 
-
     @FXML
     private Button button00;
     @FXML
@@ -35,7 +34,6 @@ public class SecondaryController {
     private char playerSymbol;
     private boolean myTurn;
 
-
     private TicTacToeNetworkClient networkClient;
 
     @FXML
@@ -48,7 +46,7 @@ public class SecondaryController {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                buttons[i][j].setText("");  // Ensure buttons start empty
+                buttons[i][j].setText("");
                 final int row = i;
                 final int col = j;
                 buttons[i][j].setOnAction(e -> {
@@ -64,16 +62,22 @@ public class SecondaryController {
         connectToServer();
     }
 
-    private String serverIp;  // Store the IP address
+    private String serverIp;
+    private int port = 3000;
 
     // Method to set the IP address
     public void setIpAddress(String ip) {
-        this.serverIp = ip; // Store the IP address
+        this.serverIp = ip;
+    }
+
+
+    public void setPort(int port) {
+        this.port = port;
     }
 
     private void connectToServer() {
         try {
-            networkClient = new TicTacToeNetworkClient(serverIp, 3000); // Use the passed IP address
+            networkClient = new TicTacToeNetworkClient(serverIp, port);
             networkClient.openConnection();
             networkClient.sendToServer("CONNECT");
         } catch (IOException e) {
@@ -82,8 +86,7 @@ public class SecondaryController {
     }
 
     private void handleMove(int row, int col) throws IOException {
-        if (myTurn && buttons[row][col].getText().equals(""))
-        {
+        if (myTurn && buttons[row][col].getText().equals("")) {
             buttons[row][col].setText(String.valueOf(playerSymbol));
             myTurn = false;
             try {
@@ -91,22 +94,16 @@ public class SecondaryController {
                     statusLabel.setText("It's a draw!");
                     disableButtons();
                     networkClient.sendToServer("DRAW");
-
                 }
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println("Error sending move to server: " + e.getMessage());
             }
-            if (checkForWin())
-            {
+            if (checkForWin()) {
                 statusLabel.setText("You win!");
                 disableButtons();
                 networkClient.sendToServer("WIN " + playerSymbol);
-            }
-            else
-            {
-
+            } else {
                 statusLabel.setText("Waiting for opponent...");
                 try {
                     networkClient.sendToServer("MOVE " + row + " " + col);
@@ -116,7 +113,6 @@ public class SecondaryController {
                 }
             }
         } else {
-
             if (!buttons[row][col].getText().equals("")) {
                 System.out.println("Attempted to move but button at " + row + ", " + col + " is already filled.");
             } else {
@@ -158,12 +154,10 @@ public class SecondaryController {
             }
         }
     }
-    public void handleServerMessage(String message) {
-        Platform.runLater(() ->
-        {
-            if (message.startsWith("MOVE"))
-            {
 
+    public void handleServerMessage(String message) {
+        Platform.runLater(() -> {
+            if (message.startsWith("MOVE")) {
                 String[] parts = message.split(" ");
                 int row = Integer.parseInt(parts[1]);
                 int col = Integer.parseInt(parts[2]);
@@ -178,25 +172,17 @@ public class SecondaryController {
                         e.printStackTrace();
                         System.out.println("Error sending move to server: " + e.getMessage());
                     }
-                }
-                else
-                {
+                } else {
                     myTurn = (symbol != playerSymbol); // Toggle turn
                     statusLabel.setText(myTurn ? "Your turn" : "Waiting for opponent...");
                 }
-            }
-            else if (message.startsWith("WIN"))
-            {
+            } else if (message.startsWith("WIN")) {
                 statusLabel.setText("You win!");
                 disableButtons();
-            }
-            else if (message.startsWith("LOSE"))
-            {
+            } else if (message.startsWith("LOSE")) {
                 statusLabel.setText("You lose!");
                 disableButtons();
-            }
-            else if (message.startsWith("START"))
-            {
+            } else if (message.startsWith("START")) {
                 playerSymbol = message.charAt(6);
                 myTurn = playerSymbol == 'X';
                 statusLabel.setText(myTurn ? "Your turn" : "Waiting for opponent...");
@@ -206,7 +192,7 @@ public class SecondaryController {
     }
 
     private boolean checkForDraw() {
-        // Check if all buttons are filled and no winner exists
+
         boolean allFilled = true;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
